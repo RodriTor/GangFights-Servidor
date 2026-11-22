@@ -1,50 +1,26 @@
-plugins {
-    id 'application'
-}
+allprojects {
+  apply plugin: 'eclipse'
+  apply plugin: 'idea'
 
-group = 'com.lstcompany.gangfights'
-version = "$projectVersion"
-
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
-
-repositories {
+  repositories {
     mavenCentral()
     mavenLocal()
+  }
 }
 
-// El servidor NO tiene ventana ni dibujo: de LibGDX solo usa Box2D (la fisica).
-dependencies {
-    implementation "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
-    implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
-    implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
-}
+configure(subprojects) {
+  apply plugin: 'java-library'
 
-application {
-    mainClass = 'Servidor.ServidorPrincipal'
-}
+  java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+  }
 
-compileJava {
+  version = "$projectVersion"
+
+  compileJava {
     options.encoding = 'UTF-8'
+  }
 }
 
-// Jar ejecutable con todas las librerias adentro (y el mapa Aula.tmx):
-//     gradlew jar        ->  build/libs/GangFights-Servidor-<version>.jar
-//     java -jar build/libs/GangFights-Servidor-<version>.jar
-jar {
-    archiveFileName.set("GangFights-Servidor-${projectVersion}.jar")
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-
-    dependsOn configurations.runtimeClasspath
-    from {
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    }
-    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/INDEX.LIST'
-
-    manifest {
-        attributes 'Main-Class': application.mainClass,
-                   'Enable-Native-Access': 'ALL-UNNAMED'
-    }
-}
+eclipse.project.name = 'GangFights-Servidor-parent'

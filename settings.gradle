@@ -4,3 +4,7 @@ plugins {
 }
 
 rootProject.name = 'GangFights-Servidor'
+
+// core   = toda la logica del servidor (red, partida, fisica Box2D, ventana de estado)
+// lwjgl3 = el lanzador de escritorio: arma el .jar ejecutable
+include 'lwjgl3', 'core'

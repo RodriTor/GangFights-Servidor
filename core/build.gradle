@@ -1,0 +1,9 @@
+eclipse.project.name = 'GangFights-Servidor-core'
+
+// El servidor NO dibuja el juego: de LibGDX solo usa Box2D (la fisica).
+dependencies {
+  api "com.badlogicgames.gdx:gdx-box2d:$gdxVersion"
+}
+
+// El mapa (Aula.tmx) y el logo de la ventana estan en la carpeta assets y viajan dentro del .jar
+sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]

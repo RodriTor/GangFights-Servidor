@@ -1,0 +1,42 @@
+plugins {
+  id 'application'
+}
+
+eclipse.project.name = 'GangFights-Servidor-lwjgl3'
+
+application {
+  mainClass = 'Servidor.ServidorPrincipal'
+}
+
+dependencies {
+  implementation project(':core')
+  implementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
+  implementation "com.badlogicgames.gdx:gdx-box2d-platform:$gdxVersion:natives-desktop"
+}
+
+run {
+  workingDir = rootProject.file('assets').path
+  standardInput = System.in
+  jvmArgs += "--enable-native-access=ALL-UNNAMED"
+}
+
+// Jar ejecutable con todas las librerias, el mapa y el logo adentro:
+//     gradlew lwjgl3:jar   ->   lwjgl3/build/libs/GangFights-Servidor-<version>.jar
+//     java -jar GangFights-Servidor-<version>.jar
+jar {
+  archiveFileName.set("GangFights-Servidor-${projectVersion}.jar")
+  duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+  dependsOn configurations.runtimeClasspath
+  from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+  exclude 'META-INF/INDEX.LIST', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+
+  manifest {
+    attributes 'Main-Class': application.mainClass,
+               'Enable-Native-Access': 'ALL-UNNAMED'
+  }
+
+  doLast {
+    file(archiveFile).setExecutable(true, false)
+  }
+}
