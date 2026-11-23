@@ -9,7 +9,7 @@ El cliente está en el repositorio **GangFights-Cliente**.
 
 - Es el **dueño de la partida**: corre la física (Box2D), los golpes, la pistola y las balas, la vida, las rondas y la revancha.
 - Los clientes **solo mandan las teclas** y **dibujan** lo que el servidor les dice (arquitectura cliente-servidor autoritativa).
-- Abre una **ventana** (Swing) con el logo, **SERVIDOR CONECTADO**, el puerto UDP y los jugadores conectados (**0/2**, **1/2**, **2/2**) con el estado "esperando jugadores" / "partida en curso". Al cerrar la ventana se apaga el servidor. También sigue mostrando mensajes en la consola. De LibGDX usa únicamente Box2D (sin dibujo).
+- Abre una **ventana** (Swing) con el logo, **SERVIDOR CONECTADO**, el puerto UDP y los jugadores conectados (**0/2**, **1/2**, **2/2**) que muestra el lobby mientras se espera y, cuando arranca una partida, **la partida en vivo** (solo mirar: mapa, jugadores, balas, items y HUD) con una franja arriba con el logo, el estado y n/2. Si la partida se corta vuelve al lobby. Al cerrar la ventana se apaga el servidor. También sigue mostrando mensajes en la consola. De LibGDX usa únicamente Box2D (sin dibujo).
 - Atiende **una partida de 2 jugadores**. Un tercer cliente recibe `LLENO`.
 
 ## Cómo se ejecuta
@@ -74,12 +74,12 @@ jugador = x,y,vida,animacion,mirandoDerecha,pistola,apuntando,anguloMira,rojo
 
 ```
 core/src/main/java          (toda la logica del servidor)
-  Servidor/   ServidorUDP (sockets + 2 hilos), VentanaServidor (ventana), Protocolo
+  Servidor/   ServidorUDP (sockets + 2 hilos), VentanaServidor (ventana), PartidaVista/MapaVista/EstadoVista/Dibujo (dibujo de la partida), Protocolo
   Logica/     PartidaServidor (rondas, fases, revancha), ReaccionGolpe (combo), FasePartida, AnimacionJugador
   Mundo/      MundoServidor (Box2D), JugadorServidor, ItemsServidor, BalasServidor, CargadorColisiones
 lwjgl3/src/main/java        (lanzador de escritorio)
   Servidor/   ServidorPrincipal (main)
-assets/       Aula.tmx (mapa, capa "Colisiones") y LogoPrincipal.png (logo de la ventana)
+assets/       Mapas/Aula.tmx (capa "Colisiones" + dibujo del mapa), sprites, items, fuente y LogoPrincipal.png (todo para la ventana)
 ```
 
 Hilos: un **hilo receptor** (solo lee datagramas y los deja en una cola) y un **hilo del juego** (60 veces por segundo atiende la cola, avanza la física y manda el estado). Solo el hilo del juego toca Box2D, por eso no hace falta `synchronized`.

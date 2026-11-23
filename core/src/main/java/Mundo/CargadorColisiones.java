@@ -26,8 +26,7 @@ public class CargadorColisiones {
     /** Dentro del .jar el mapa esta en la raiz; desde el IDE se busca en la carpeta assets. */
     private static final String[] RUTAS_ALTERNATIVAS = {
         "../assets/Mapas/Aula.tmx",
-        "assets/Mapas/Aula.tmx",
-        "Aula.tmx"
+        "assets/Mapas/Aula.tmx"
     };
 
     /** @return lista de {x, y, ancho, alto} en pixeles, con el origen abajo a la izquierda (como Box2D). */
@@ -40,7 +39,7 @@ public class CargadorColisiones {
     }
 
     private static InputStream abrirMapa() throws IOException {
-        InputStream dentroDelJar = CargadorColisiones.class.getResourceAsStream("/" + NOMBRE_MAPA);
+        InputStream dentroDelJar = CargadorColisiones.class.getResourceAsStream("/Mapas/" + NOMBRE_MAPA);
         if (dentroDelJar != null) {
             return dentroDelJar;
         }

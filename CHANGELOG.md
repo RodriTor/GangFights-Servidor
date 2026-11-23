@@ -1,5 +1,10 @@
 # Registro de cambios - Servidor
 
+## [Actualización] - 2026-11-23
+### Añadido
+- La ventana del servidor muestra la partida en vivo (solo mirar): mapa, jugadores, balas, items y HUD, con una franja arriba con el logo, "SERVIDOR CONECTADO" y n/2. Pantalla de inicio a la resolución de la partida (1280x810, escalable); vuelve al inicio cuando la partida se corta.
+- `ServidorUDP.getUltimoEstado()`: la ventana lee la última foto del juego sin tocar los datos del servidor.
+
 ## [1.0.0] - 2026-11-22
 ### Añadido
 - Servidor UDP autoritativo (puerto 6767): descubrimiento por broadcast, conexión de 2 jugadores, estado a 30 Hz, latidos, desconexión por tiempo, cierre ordenado.

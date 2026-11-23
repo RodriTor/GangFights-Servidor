@@ -78,6 +78,7 @@ public class ServidorUDP {
     // Copias para que la ventana del servidor (otro hilo) pueda leer sin tocar los datos del juego
     private volatile int jugadoresVisibles = 0;
     private volatile boolean partidaEnCurso = false;
+    private volatile String ultimoEstado = null;
     private int secuenciaEstado = 0;
 
     /** @throws SocketException (BindException) si el puerto ya esta ocupado */
@@ -104,6 +105,14 @@ public class ServidorUDP {
     /** true si hay una partida andando (los dos jugadores adentro). */
     public boolean isPartidaEnCurso() {
         return partidaEnCurso;
+    }
+
+    /**
+     * La ultima "foto" del juego (el mismo texto ESTADO que se manda a los clientes). Es un String, o sea que no
+     * se puede modificar: la ventana del servidor lo lee desde su hilo sin tocar nada del juego. null si todavia no hay.
+     */
+    public String getUltimoEstado() {
+        return ultimoEstado;
     }
 
     public boolean isCorriendo() {
@@ -348,9 +357,11 @@ public class ServidorUDP {
     // ---------------------------------------------------------------- Estado
 
     private void enviarEstado() {
+        String estado = construirEstado();
+        ultimoEstado = estado; // para la ventana del servidor (se actualiza aunque no haya clientes)
+
         if (contarClientes() == 0) return;
 
-        String estado = construirEstado();
         for (Conexion c : clientes) {
             if (c != null) enviar(c.direccion, c.puerto, estado);
         }

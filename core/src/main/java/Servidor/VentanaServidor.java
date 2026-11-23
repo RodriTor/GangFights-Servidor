@@ -1,53 +1,60 @@
 package Servidor;
 
-import javax.imageio.ImageIO;
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
-import java.awt.Image;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
 import javax.swing.WindowConstants;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.GraphicsEnvironment;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
 
 /**
- * Ventana del servidor: el logo en grande, el estado ("SERVIDOR CONECTADO"), el puerto y cuantos jugadores hay (n/2).
- * Es solo para mostrar: la ventana no toca el juego, solo lee los contadores que publica ServidorUDP.
- * (Usa Swing para no tener que armar un segundo motor grafico dentro del servidor.)
+ * Ventana del servidor. Es SOLO para mirar (no manda nada ni toca el juego, solo lee lo que publica ServidorUDP):
+ *  - Sin partida: pantalla de inicio con el logo, "SERVIDOR CONECTADO", el puerto y los jugadores (n/2).
+ *  - Con partida: la partida en vivo, con una franja arriba con el logo, el estado y los jugadores.
+ *  - Cuando se van los jugadores y la partida se corta, vuelve a la pantalla de inicio.
+ * Se dibuja en un lienzo fijo de 1280 x 810 (la partida es de 1280x720 + 90 de franja) que se escala al tamano de la ventana.
  */
 public class VentanaServidor {
+
+    static final int ANCHO = PartidaVista.ANCHO;
+    static final int ALTO_FRANJA = 90;
+    static final int ALTO = ALTO_FRANJA + PartidaVista.ALTO;
 
     private static final Color FONDO = new Color(1, 1, 1); // el mismo negro que tiene el logo
     private static final Color VERDE = new Color(80, 230, 110);
     private static final Color ROJO = new Color(240, 90, 80);
     private static final Color AMARILLO = new Color(255, 215, 0);
-    private static final int MILISEGUNDOS_ENTRE_ACTUALIZACIONES = 250;
+    private static final int MILISEGUNDOS_ENTRE_CUADROS = 16; // ~60 cuadros por segundo
 
     private final ServidorUDP servidor;
-    private final JLabel estado = etiqueta(34, Font.BOLD, VERDE);
-    private final JLabel puerto = etiqueta(22, Font.PLAIN, Color.WHITE);
-    private final JLabel titulo = etiqueta(24, Font.PLAIN, Color.LIGHT_GRAY);
-    private final JLabel jugadores = etiqueta(80, Font.BOLD, Color.WHITE);
-    private final JLabel detalle = etiqueta(22, Font.PLAIN, Color.LIGHT_GRAY);
+    private final int numeroPuerto;
+    private final BufferedImage logo;     // recortado al dibujo (sin el negro de alrededor)
+    private PartidaVista partidaVista;    // null si no se pudieron cargar las imagenes
+    private EstadoVista estadoActual;
+    private String ultimoTexto;
+    private long ultimoCuadro = System.nanoTime();
 
     private VentanaServidor(ServidorUDP servidor, int numeroPuerto) {
         this.servidor = servidor;
-        puerto.setText("PUERTO UDP: " + numeroPuerto);
-        titulo.setText("JUGADORES");
+        this.numeroPuerto = numeroPuerto;
+        this.logo = cargarLogo();
+
+        try {
+            this.partidaVista = new PartidaVista();
+        } catch (Exception e) {
+            System.out.println("[VENTANA] No se pudo preparar la vista de la partida: " + e);
+        }
     }
 
     /**
@@ -60,7 +67,7 @@ public class VentanaServidor {
 
     /** Cartel de error para cuando el servidor no puede arrancar (el .jar a veces se abre sin consola). */
     public static void mostrarError(String mensaje) {
-        if (java.awt.GraphicsEnvironment.isHeadless()) return;
+        if (GraphicsEnvironment.isHeadless()) return;
         JOptionPane.showMessageDialog(null, mensaje, "GangFights - Servidor", JOptionPane.ERROR_MESSAGE);
     }
 
@@ -75,120 +82,150 @@ public class VentanaServidor {
             }
         });
 
-        JPanel panel = new JPanel();
-        panel.setBackground(FONDO);
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 30, 20, 30));
-
-        JLabel logo = new JLabel(cargarLogo(440), SwingConstants.CENTER);
-        logo.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        panel.add(logo);
-        panel.add(espacio(10));
-        panel.add(estado);
-        panel.add(espacio(8));
-        panel.add(puerto);
-        panel.add(espacio(18));
-        panel.add(titulo);
-        panel.add(jugadores);
-        panel.add(espacio(4));
-        panel.add(detalle);
+        JPanel panel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics grafico) {
+                super.paintComponent(grafico);
+                pintar((Graphics2D) grafico, getWidth(), getHeight());
+            }
+        };
+        panel.setBackground(Color.BLACK);
+        panel.setPreferredSize(tamanioInicial());
 
         ventana.setContentPane(panel);
-        ventana.setSize(640, 800);
-        ventana.setMinimumSize(new java.awt.Dimension(560, 740));
+        ventana.pack();
+        ventana.setMinimumSize(new Dimension(640, 420));
         ventana.setLocationRelativeTo(null);
         ventana.setVisible(true);
 
-        actualizar();
-        new Timer(MILISEGUNDOS_ENTRE_ACTUALIZACIONES, e -> actualizar()).start();
+        new Timer(MILISEGUNDOS_ENTRE_CUADROS, e -> panel.repaint()).start();
     }
 
-    private void actualizar() {
-        if (servidor.isCorriendo()) {
-            estado.setText("SERVIDOR CONECTADO");
-            estado.setForeground(VERDE);
+    /** El lienzo completo si entra en la pantalla; si no, mas chico manteniendo la proporcion. */
+    private static Dimension tamanioInicial() {
+        Rectangle pantalla = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+        double escala = Math.min(1.0, Math.min((pantalla.width - 30) / (double) ANCHO, (pantalla.height - 70) / (double) ALTO));
+        escala = Math.max(escala, 0.4);
+        return new Dimension((int) (ANCHO * escala), (int) (ALTO * escala));
+    }
+
+
+    // ---------------------------------------------------------------- Dibujo
+
+    private void pintar(Graphics2D g, int anchoVentana, int altoVentana) {
+        long ahora = System.nanoTime();
+        float delta = Math.min(0.1f, (ahora - ultimoCuadro) / 1_000_000_000f);
+        ultimoCuadro = ahora;
+
+        leerEstado();
+        boolean corriendo = servidor.isCorriendo();
+        boolean hayPartida = corriendo && estadoActual != null && partidaVista != null
+            && estadoActual.fase != EstadoVista.FASE_ESPERANDO;
+
+        if (hayPartida) partidaVista.actualizar(estadoActual, delta);
+
+        // El lienzo de 1280x810 se escala para entrar en la ventana (con barras negras si la proporcion no coincide)
+        double escala = Math.min(anchoVentana / (double) ANCHO, altoVentana / (double) ALTO);
+        double desplazamientoX = (anchoVentana - ANCHO * escala) / 2.0;
+        double desplazamientoY = (altoVentana - ALTO * escala) / 2.0;
+
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, anchoVentana, altoVentana);
+        g.translate(desplazamientoX, desplazamientoY);
+        g.scale(escala, escala);
+        g.setClip(0, 0, ANCHO, ALTO);
+
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+
+        int jugadores = servidor.getJugadoresConectados();
+
+        if (hayPartida) {
+            dibujarFranja(g, corriendo, jugadores);
+
+            AffineTransform original = g.getTransform();
+            g.translate(0, ALTO_FRANJA);
+            partidaVista.dibujar(g);
+            g.setTransform(original);
         } else {
-            estado.setText("SERVIDOR DESCONECTADO");
-            estado.setForeground(ROJO);
+            dibujarInicio(g, corriendo, jugadores);
+        }
+    }
+
+    /** Toma la ultima foto del servidor (solo la convierte si cambio). */
+    private void leerEstado() {
+        String texto = servidor.getUltimoEstado();
+        if (texto == null) {
+            estadoActual = null;
+            ultimoTexto = null;
+        } else if (texto != ultimoTexto) {
+            ultimoTexto = texto;
+            estadoActual = EstadoVista.leer(texto);
+        }
+    }
+
+    /** Pantalla de inicio: el logo en grande, el estado, el puerto y los jugadores. */
+    private void dibujarInicio(Graphics2D g, boolean corriendo, int jugadores) {
+        g.setColor(FONDO);
+        g.fillRect(0, 0, ANCHO, ALTO);
+
+        if (logo != null) {
+            // Agrandado en numeros enteros para que el pixel art quede nitido
+            int factor = Math.max(1, Math.min(820 / logo.getWidth(), 330 / logo.getHeight()));
+            int ancho = logo.getWidth() * factor;
+            int alto = logo.getHeight() * factor;
+            g.drawImage(logo, (ANCHO - ancho) / 2, 30 + (330 - alto) / 2, ancho, alto, null);
         }
 
-        int cantidad = servidor.getJugadoresConectados();
-        jugadores.setText(cantidad + "/2");
+        Dibujo.textoCentrado(g, corriendo ? "SERVIDOR CONECTADO" : "SERVIDOR DESCONECTADO", 68,
+            corriendo ? VERDE : ROJO, ANCHO / 2f, 385);
+        Dibujo.textoCentrado(g, "PUERTO UDP: " + numeroPuerto, 34, Color.WHITE, ANCHO / 2f, 475);
 
-        if (!servidor.isCorriendo()) {
-            detalle.setText("El servidor se cerro");
-            detalle.setForeground(ROJO);
-        } else if (cantidad >= 2) {
-            detalle.setText("PARTIDA EN CURSO");
-            detalle.setForeground(VERDE);
+        Dibujo.textoCentrado(g, "JUGADORES", 30, Color.LIGHT_GRAY, ANCHO / 2f, 545);
+        Dibujo.textoCentrado(g, jugadores + "/2", 130, Color.WHITE, ANCHO / 2f, 585);
+
+        String detalle;
+        Color colorDetalle;
+        if (!corriendo) {
+            detalle = "EL SERVIDOR SE CERRO";
+            colorDetalle = ROJO;
         } else {
-            detalle.setText("ESPERANDO JUGADORES...");
-            detalle.setForeground(AMARILLO);
+            detalle = "ESPERANDO JUGADORES...";
+            colorDetalle = AMARILLO;
         }
+        Dibujo.textoCentrado(g, detalle, 34, colorDetalle, ANCHO / 2f, 735);
     }
 
-    private static JLabel etiqueta(int tamanio, int estilo, Color color) {
-        JLabel etiqueta = new JLabel(" ", SwingConstants.CENTER);
-        etiqueta.setFont(new Font(Font.MONOSPACED, estilo, tamanio));
-        etiqueta.setForeground(color);
-        etiqueta.setAlignmentX(Component.CENTER_ALIGNMENT);
-        return etiqueta;
-    }
+    /** Franja de arriba durante la partida: logo, estado del servidor y jugadores. */
+    private void dibujarFranja(Graphics2D g, boolean corriendo, int jugadores) {
+        g.setColor(FONDO);
+        g.fillRect(0, 0, ANCHO, ALTO_FRANJA);
 
-    private static Component espacio(int alto) {
-        return javax.swing.Box.createVerticalStrut(alto);
+        if (logo != null) {
+            int alto = ALTO_FRANJA - 14;
+            int ancho = Math.round(logo.getWidth() * (alto / (float) logo.getHeight()));
+            g.drawImage(logo, 20, 7, ancho, alto, null);
+        }
+
+        Dibujo.textoCentrado(g, corriendo ? "SERVIDOR CONECTADO" : "SERVIDOR DESCONECTADO", 38,
+            corriendo ? VERDE : ROJO, ANCHO / 2f, 12);
+        Dibujo.textoCentrado(g, "PUERTO UDP: " + numeroPuerto + "   |   PARTIDA EN CURSO", 20,
+            Color.LIGHT_GRAY, ANCHO / 2f, 60);
+
+        Dibujo.textoDerecha(g, jugadores + "/2", 56, Color.WHITE, ANCHO - 30f, 10);
+        Dibujo.textoDerecha(g, "JUGADORES", 16, Color.LIGHT_GRAY, ANCHO - 30f, 70);
     }
 
     /**
      * El logo viene dentro del .jar. La imagen es un lienzo negro con el logo chiquito en el centro:
-     * se recorta alrededor del dibujo y se agranda en numeros enteros (sin suavizar, para que el pixel art
-     * quede nitido). Si no se puede leer, la ventana funciona igual sin imagen.
+     * se recorta alrededor del dibujo. Si no se puede leer, la ventana funciona igual sin imagen.
      */
-    private static ImageIcon cargarLogo(int anchoMaximo) {
-        try (InputStream entrada = VentanaServidor.class.getResourceAsStream("/LogoPrincipal.png")) {
-            if (entrada == null) return null;
-
-            BufferedImage imagen = ImageIO.read(entrada);
-            BufferedImage recorte = recortarAlDibujo(imagen, 12);
-
-            int factor = Math.max(1, anchoMaximo / recorte.getWidth());
-            BufferedImage grande = new BufferedImage(recorte.getWidth() * factor, recorte.getHeight() * factor,
-                BufferedImage.TYPE_INT_RGB);
-            Graphics2D g = grande.createGraphics();
-            g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-            g.drawImage(recorte, 0, 0, grande.getWidth(), grande.getHeight(), null);
-            g.dispose();
-
-            return new ImageIcon(grande);
-        } catch (IOException | RuntimeException e) {
+    private static BufferedImage cargarLogo() {
+        try {
+            return Dibujo.sinFondoNegro(Dibujo.imagen("/LogoPrincipal.png"), 12);
+        } catch (java.io.IOException | RuntimeException e) {
             return null;
         }
-    }
-
-    /** Recorta la imagen dejando solo la zona que no es negra (mas un margen). */
-    private static BufferedImage recortarAlDibujo(BufferedImage imagen, int margen) {
-        int minX = imagen.getWidth(), minY = imagen.getHeight(), maxX = -1, maxY = -1;
-
-        for (int y = 0; y < imagen.getHeight(); y++) {
-            for (int x = 0; x < imagen.getWidth(); x++) {
-                int rgb = imagen.getRGB(x, y);
-                int brillo = ((rgb >> 16 & 0xFF) + (rgb >> 8 & 0xFF) + (rgb & 0xFF)) / 3;
-                if (brillo > 40) {
-                    minX = Math.min(minX, x);
-                    minY = Math.min(minY, y);
-                    maxX = Math.max(maxX, x);
-                    maxY = Math.max(maxY, y);
-                }
-            }
-        }
-
-        if (maxX < 0) return imagen; // imagen toda negra
-
-        int x0 = Math.max(0, minX - margen);
-        int y0 = Math.max(0, minY - margen);
-        int x1 = Math.min(imagen.getWidth() - 1, maxX + margen);
-        int y1 = Math.min(imagen.getHeight() - 1, maxY + margen);
-        return imagen.getSubimage(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
     }
 }
