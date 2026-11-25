@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-/**
- * Botiquin y pistola: aparecen sobre el piso o las plataformas (uno de cada a la vez)
- * y se los lleva el jugador que se agacha encima. Mismas reglas que el modo local.
- */
 public class ItemsServidor {
 
     // Tamanos en pixeles ya con la escala x2 (imagenes de 21x13 y 11x9 sin borde transparente)
@@ -34,7 +30,6 @@ public class ItemsServidor {
     private final List<float[]> puntos = new ArrayList<>();
     private final Random azar = new Random();
 
-    /** Cada item es {x, base}: x del centro y y de la superficie donde se apoya. null si no hay. */
     private float[] botiquin;
     private float[] pistola;
     private float esperaBotiquin;
@@ -83,7 +78,6 @@ public class ItemsServidor {
             || intentarRecoger(item, ancho, alto, esBotiquin, jugador2);
     }
 
-    /** Se recoge si el jugador esta agachado y toca el item (aunque sea un poco). */
     private boolean intentarRecoger(float[] item, float ancho, float alto, boolean esBotiquin,
                                     JugadorServidor jugador) {
         if (!jugador.isActivo() || !jugador.estaAgachado()) return false;
@@ -103,7 +97,6 @@ public class ItemsServidor {
         return true;
     }
 
-    /** Puntos {x, superficie} donde entra un item sin quedar dentro de un mueble ni de otra plataforma. */
     private void buscarPuntosLibres() {
         for (float[] base : obstaculos) {
             float superficie = base[1] + base[3];

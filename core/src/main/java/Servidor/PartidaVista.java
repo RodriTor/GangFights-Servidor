@@ -5,12 +5,7 @@ import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 
-/**
- * Dibuja la partida en la ventana del servidor (solo mirar: no manda nada ni toca el juego).
- * Usa las mismas medidas que el cliente (mundo de 1280x720, el origen del juego esta ABAJO a la izquierda;
- * aca se convierte a coordenadas de pantalla con y = 720 - y). Lee la ultima "foto" del servidor y suaviza
- * el movimiento igual que el cliente, asi el servidor muestra lo mismo que ven los jugadores.
- */
+
 final class PartidaVista {
 
     static final int ANCHO = 1280;
@@ -24,7 +19,7 @@ final class PartidaVista {
     private static final float VELOCIDAD_SUAVIZADO = 20f;
     private static final float DISTANCIA_PARA_TELETRANSPORTAR = 150f;
 
-    // Mira (mismas medidas que JugadorServidor)
+
     private static final float DISTANCIA_MIRA = 70f;
     private static final float ALTURA_BOCA = 8f;
     private static final float SALIDA_BALA_X = 22f;
@@ -56,8 +51,6 @@ final class PartidaVista {
     private static final Color FONDO_RETRATO_MUERTO = new Color(115, 13, 13);
     private static final Color[] COLORES = {Color.CYAN, Color.ORANGE};
     private static final Color AMARILLO = new Color(255, 255, 0);
-
-    /** Las imagenes de un personaje, ya recortadas en cuadros de 32x42 (cada una tambien en version "roja"). */
     private static final class ImagenesPersonaje {
         final BufferedImage[][] quieto, correr, golpe, recibir;
         final BufferedImage agachado, salto, muerto, disparo;
@@ -73,7 +66,6 @@ final class PartidaVista {
             disparo = cuadros(carpeta, nombre, "Disparo", 1)[0][0];
         }
 
-        /** Devuelve {normales, rojos}. Orden de los cuadros: [0][0], [0][1], [1][0] (como en el cliente). */
         private static BufferedImage[][] cuadros(String carpeta, String nombre, String accion, int cantidad)
             throws java.io.IOException {
             BufferedImage hoja = Dibujo.imagen("/Spritesheets/" + carpeta + "/" + nombre + accion + ".png");
@@ -93,7 +85,6 @@ final class PartidaVista {
         }
     }
 
-    /** Como se ve un jugador: posicion suavizada y tiempos de animacion. */
     private static final class JugadorDibujo {
         float x, y, objetivoX, objetivoY;
         int animacion;
@@ -147,7 +138,6 @@ final class PartidaVista {
     private int ultimaSecuencia = -1;
     private float tiempoDesdeEstado;
 
-    /** @throws Exception si falta algun archivo del mapa o de las imagenes (la ventana sigue funcionando sin la vista de partida) */
     PartidaVista() throws Exception {
         mapa = MapaVista.crear();
         personajes[0] = new ImagenesPersonaje("Jasinski", "Jasinski");
@@ -159,7 +149,6 @@ final class PartidaVista {
         calavera = Dibujo.imagen("/Elementos/Calavera.png");
     }
 
-    /** Se llama en cada cuadro de la ventana con la ultima foto del servidor. */
     void actualizar(EstadoVista estado, float delta) {
         if (estado == null) return;
 
@@ -174,12 +163,10 @@ final class PartidaVista {
         for (JugadorDibujo jugador : jugadores) jugador.actualizar(delta);
     }
 
-    /** Dibuja la partida en un area de 1280x720 con el origen arriba a la izquierda. */
     void dibujar(Graphics2D g) {
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, ANCHO, ALTO);
 
-        // El mapa (544 px de alto) se apoya abajo; arriba queda el espacio negro del HUD
         g.drawImage(mapa, 0, ALTO - mapa.getHeight(), null);
 
         if (ultimo == null) return;
@@ -193,7 +180,6 @@ final class PartidaVista {
         dibujarMensajes(g);
     }
 
-    // ---------------------------------------------------------------- Items, jugadores y balas
 
     private void dibujarItem(Graphics2D g, BufferedImage imagen, int[] posicion) {
         if (posicion == null) return;
@@ -234,7 +220,6 @@ final class PartidaVista {
         if (j.apuntando) dibujarMira(g, j);
     }
 
-    /** Las imagenes miran a la derecha: si mira a la izquierda se espeja. */
     private void dibujarImagenCentrada(Graphics2D g, BufferedImage imagen, boolean mirandoDerecha) {
         int izquierda = Math.round(-ANCHO_CUERPO / 2f);
         int arriba = Math.round(-ALTO_CUERPO / 2f);
@@ -276,7 +261,6 @@ final class PartidaVista {
         }
     }
 
-    /** Un cuadradito hueco que gira alrededor de la boca del arma: hacia ahi va a salir la bala. */
     private void dibujarMira(Graphics2D g, JugadorDibujo j) {
         float sentido = j.mirandoDerecha ? 1f : -1f;
         double radianes = Math.toRadians(j.anguloMira);
@@ -296,7 +280,6 @@ final class PartidaVista {
         g.fillRect(izquierda + lado - grosor, arriba, grosor, lado);
     }
 
-    /** Las balas se deslizan un poquito entre foto y foto para que se vean fluidas. */
     private void dibujarBalas(Graphics2D g) {
         float desliz = VELOCIDAD_BALA * Math.min(tiempoDesdeEstado, TIEMPO_MAXIMO_DESLIZADO);
         g.setColor(Color.YELLOW);
@@ -314,7 +297,6 @@ final class PartidaVista {
         }
     }
 
-    // ---------------------------------------------------------------- HUD y mensajes
 
     private float cajaX(int i) { return i == 0 ? MARGEN : ANCHO - MARGEN - CAJA; }
     private float panelX(int i) { return i == 0 ? MARGEN + CAJA + 16f : ANCHO - MARGEN - CAJA - 16f - PANEL_ANCHO; }
@@ -324,7 +306,6 @@ final class PartidaVista {
     private float slotX(int i) { return i == 0 ? panelX(i) : panelX(i) + PANEL_ANCHO - SLOT; }
     private float slotY() { return panelY() - SEPARACION_SLOT - SLOT; }
 
-    /** Rectangulo con coordenadas del juego (y hacia arriba): se pasa de la esquina de abajo a la de arriba. */
     private void rect(Graphics2D g, Color color, float x, float y, float ancho, float alto) {
         g.setColor(color);
         g.fillRect(Math.round(x), Math.round(ALTO - y - alto), Math.round(ancho), Math.round(alto));

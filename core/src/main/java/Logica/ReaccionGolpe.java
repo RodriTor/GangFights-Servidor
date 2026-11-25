@@ -1,17 +1,9 @@
 package Logica;
 
-/**
- * Reglas del combo de golpes recibidos (sin LibGDX, solo logica y tiempos).
- *
- * Cada golpe que conecta hace avanzar la etapa: 1 -> 2 -> 3 (las tres imagenes de "recibir").
- * Mientras el jugador esta aturdido puede ESCAPAR del combo con una pulsacion.
- * Si el combo llega a la etapa 3, el jugador queda libre un momento e inmune, asi el 4to golpe no le afecta.
- */
 public class ReaccionGolpe {
 
     public static final int ETAPAS = 3;
 
-    /** Tiempo aturdido tras el golpe 1 y 2: es la ventana para escapar (o para que llegue el siguiente golpe). */
     private static final float VENTANA_COMBO = 1.3f;
     private static final float DURACION_ULTIMA_ETAPA = 0.5f;
     private static final float INMUNIDAD_FIN_COMBO = 1.2f;
@@ -21,16 +13,14 @@ public class ReaccionGolpe {
     private float tiempoAturdido = 0f;
     private float tiempoInmune = 0f;
 
-    /** @return true si el golpe hace dano (false si el jugador esta inmune). */
     public boolean recibirGolpe() {
         if (tiempoInmune > 0f) return false;
-
         etapa = Math.min(etapa + 1, ETAPAS);
         tiempoAturdido = (etapa == ETAPAS) ? DURACION_ULTIMA_ETAPA : VENTANA_COMBO;
         return true;
     }
 
-    /** @return true si estaba aturdido y logro salirse del combo. */
+    /* true si estaba aturdido y logro salirse del combo. */
     public boolean escapar() {
         if (!estaAturdido()) return false;
 
@@ -69,7 +59,7 @@ public class ReaccionGolpe {
         return tiempoInmune > 0f;
     }
 
-    /** 0 = libre, 1..3 = imagen de "recibir" que se muestra. */
+    /* 0 = libre, 1..3 = imagen de "recibir" que se muestra. */
     public int getEtapa() {
         return etapa;
     }

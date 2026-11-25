@@ -12,11 +12,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Dibuja el mapa Aula.tmx (el mismo que usa el cliente) en una sola imagen, una unica vez al abrir la ventana.
- * Lee las capas en el orden del archivo: imagen de fondo, y despues cada capa de tiles.
- * (Las colisiones no se dibujan: ya las usa el mundo fisico del servidor.)
- */
+
 final class MapaVista {
 
     private static final String CARPETA = "/Mapas/";
@@ -26,7 +22,6 @@ final class MapaVista {
 
     private MapaVista() { }
 
-    /** @return una imagen del tamano del mapa (40x17 tiles de 32 px = 1280x544), con el origen arriba a la izquierda. */
     static BufferedImage crear() throws Exception {
         Document mapa = leerXml(CARPETA + "Aula.tmx");
         Element raiz = mapa.getDocumentElement();

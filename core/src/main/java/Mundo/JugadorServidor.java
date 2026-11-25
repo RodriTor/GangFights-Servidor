@@ -12,11 +12,7 @@ import com.badlogic.gdx.physics.box2d.World;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Un jugador dentro del servidor: cuerpo Box2D, vida, golpes y combo.
- * Tiene las mismas reglas que el Jugador del modo local, pero en vez de leer el teclado
- * recibe lo que mando el cliente (setEntrada, pedirSalto y pedirGolpe).
- */
+
 public class JugadorServidor {
 
     public static final int VIDA_MAXIMA = 100;

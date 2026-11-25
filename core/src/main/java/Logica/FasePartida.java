@@ -1,6 +1,5 @@
 package Logica;
 
-/** Etapas de una partida en el servidor. El numero (ordinal) es el que viaja por la red. */
 public enum FasePartida {
     ESPERANDO,        // falta el segundo jugador
     CUENTA,           // 3, 2, 1 antes de cada ronda

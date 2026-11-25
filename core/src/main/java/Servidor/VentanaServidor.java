@@ -18,13 +18,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 
-/**
- * Ventana del servidor. Es SOLO para mirar (no manda nada ni toca el juego, solo lee lo que publica ServidorUDP):
- *  - Sin partida: pantalla de inicio con el logo, "SERVIDOR CONECTADO", el puerto y los jugadores (n/2).
- *  - Con partida: la partida en vivo, con una franja arriba con el logo, el estado y los jugadores.
- *  - Cuando se van los jugadores y la partida se corta, vuelve a la pantalla de inicio.
- * Se dibuja en un lienzo fijo de 1280 x 810 (la partida es de 1280x720 + 90 de franja) que se escala al tamano de la ventana.
- */
+
+
 public class VentanaServidor {
 
     static final int ANCHO = PartidaVista.ANCHO;
@@ -53,19 +48,15 @@ public class VentanaServidor {
         try {
             this.partidaVista = new PartidaVista();
         } catch (Exception e) {
-            System.out.println("[VENTANA] No se pudo preparar la vista de la partida: " + e);
+            System.out.println("No se pudo preparar la vista de la partida: " + e);
         }
     }
 
-    /**
-     * Abre la ventana. alCerrar se ejecuta cuando el usuario la cierra (el servidor tiene que apagarse).
-     * Se puede llamar desde cualquier hilo.
-     */
+
     public static void abrir(ServidorUDP servidor, int numeroPuerto, Runnable alCerrar) {
         SwingUtilities.invokeLater(() -> new VentanaServidor(servidor, numeroPuerto).construir(alCerrar));
     }
 
-    /** Cartel de error para cuando el servidor no puede arrancar (el .jar a veces se abre sin consola). */
     public static void mostrarError(String mensaje) {
         if (GraphicsEnvironment.isHeadless()) return;
         JOptionPane.showMessageDialog(null, mensaje, "GangFights - Servidor", JOptionPane.ERROR_MESSAGE);
@@ -101,7 +92,6 @@ public class VentanaServidor {
         new Timer(MILISEGUNDOS_ENTRE_CUADROS, e -> panel.repaint()).start();
     }
 
-    /** El lienzo completo si entra en la pantalla; si no, mas chico manteniendo la proporcion. */
     private static Dimension tamanioInicial() {
         Rectangle pantalla = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
         double escala = Math.min(1.0, Math.min((pantalla.width - 30) / (double) ANCHO, (pantalla.height - 70) / (double) ALTO));
@@ -110,7 +100,6 @@ public class VentanaServidor {
     }
 
 
-    // ---------------------------------------------------------------- Dibujo
 
     private void pintar(Graphics2D g, int anchoVentana, int altoVentana) {
         long ahora = System.nanoTime();
@@ -153,7 +142,6 @@ public class VentanaServidor {
         }
     }
 
-    /** Toma la ultima foto del servidor (solo la convierte si cambio). */
     private void leerEstado() {
         String texto = servidor.getUltimoEstado();
         if (texto == null) {
@@ -165,7 +153,6 @@ public class VentanaServidor {
         }
     }
 
-    /** Pantalla de inicio: el logo en grande, el estado, el puerto y los jugadores. */
     private void dibujarInicio(Graphics2D g, boolean corriendo, int jugadores) {
         g.setColor(FONDO);
         g.fillRect(0, 0, ANCHO, ALTO);
@@ -197,7 +184,6 @@ public class VentanaServidor {
         Dibujo.textoCentrado(g, detalle, 34, colorDetalle, ANCHO / 2f, 735);
     }
 
-    /** Franja de arriba durante la partida: logo, estado del servidor y jugadores. */
     private void dibujarFranja(Graphics2D g, boolean corriendo, int jugadores) {
         g.setColor(FONDO);
         g.fillRect(0, 0, ANCHO, ALTO_FRANJA);
@@ -217,10 +203,7 @@ public class VentanaServidor {
         Dibujo.textoDerecha(g, "JUGADORES", 16, Color.LIGHT_GRAY, ANCHO - 30f, 70);
     }
 
-    /**
-     * El logo viene dentro del .jar. La imagen es un lienzo negro con el logo chiquito en el centro:
-     * se recorta alrededor del dibujo. Si no se puede leer, la ventana funciona igual sin imagen.
-     */
+
     private static BufferedImage cargarLogo() {
         try {
             return Dibujo.sinFondoNegro(Dibujo.imagen("/LogoPrincipal.png"), 12);

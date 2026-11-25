@@ -85,7 +85,6 @@ final class EstadoVista {
         return balas;
     }
 
-    /** @return la foto, o null si el texto es null o esta mal formado. */
     static EstadoVista leer(String mensaje) {
         if (mensaje == null) return null;
         try {

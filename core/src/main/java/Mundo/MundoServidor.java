@@ -14,12 +14,7 @@ import com.badlogic.gdx.physics.box2d.World;
 
 import java.util.List;
 
-/**
- * El mundo fisico del juego. Solo existe en el servidor: los clientes nunca simulan fisica.
- * Tiene el mapa (plataformas), los dos jugadores y los items.
- *
- * Box2D no es seguro para varios hilos, por eso este objeto lo usa un unico hilo (el del juego).
- */
+
 public class MundoServidor {
 
     public static final float PIXELES_POR_METRO = 10f;
@@ -85,11 +80,6 @@ public class MundoServidor {
         jugadores[1].reaparecer();
     }
 
-    /**
-     * Un paso de 1/60 s.
-     * @param puedenMoverse false durante la cuenta regresiva
-     * @param hayCombate    true solo mientras la ronda esta en curso (golpes e items)
-     */
     public void actualizar(boolean puedenMoverse, boolean hayCombate) {
         jugadores[0].actualizar(PASO_FISICA, puedenMoverse);
         jugadores[1].actualizar(PASO_FISICA, puedenMoverse);
@@ -129,7 +119,6 @@ public class MundoServidor {
     }
 
 
-    /** Cuenta cuantas superficies toca el sensor de los pies de cada jugador. */
     private static class DetectorSuelo implements ContactListener {
 
         @Override

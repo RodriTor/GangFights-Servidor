@@ -1,6 +1,8 @@
 # Registro de cambios - Servidor
 
 ## [Actualización] - 2026-11-23
+### Cambiado
+- Los hilos pasan a ser clases propias como en los trabajos de referencia: `HiloServer extends Thread` (dueño del socket, recibe y envía) y `HiloJuego extends Thread` (bucle del juego), más las clases `Cliente` y `DireccionRed`. `ServidorUDP` queda como coordinador. El comportamiento y el protocolo no cambian.
 ### Añadido
 - La ventana del servidor muestra la partida en vivo (solo mirar): mapa, jugadores, balas, items y HUD, con una franja arriba con el logo, "SERVIDOR CONECTADO" y n/2. Pantalla de inicio a la resolución de la partida (1280x810, escalable); vuelve al inicio cuando la partida se corta.
 - `ServidorUDP.getUltimoEstado()`: la ventana lee la última foto del juego sin tocar los datos del servidor.

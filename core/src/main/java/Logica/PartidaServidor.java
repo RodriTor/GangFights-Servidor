@@ -1,12 +1,5 @@
 package Logica;
 
-/**
- * Reglas de la partida (sin red ni Box2D): fases, rondas y revancha.
- * Se juega al mejor de 5: gana quien llega primero a 3 rondas.
- *
- * Cada vez que hay que empezar una ronda de cero (jugadores en su lugar, vida llena, items nuevos)
- * se avisa con el Runnable que recibe el constructor.
- */
 public class PartidaServidor {
 
     public static final int RONDAS_PARA_GANAR = 3;
@@ -27,7 +20,6 @@ public class PartidaServidor {
         this.alIniciarRonda = alIniciarRonda;
     }
 
-    /** Se llama en cada paso del servidor. */
     public void actualizar(float delta, int jugadoresConectados, boolean jugador1Vivo, boolean jugador2Vivo) {
         if (jugadoresConectados < 2) {
             if (fase != FasePartida.ESPERANDO) {
@@ -71,7 +63,7 @@ public class PartidaServidor {
         }
     }
 
-    /** Un jugador pide la revancha (solo vale cuando la partida ya termino). */
+    /* Un jugador pide la revancha  */
     public void pedirRevancha(int indice) {
         if (fase == FasePartida.FINALIZADA) {
             quiereRevancha[indice] = true;
@@ -96,14 +88,14 @@ public class PartidaServidor {
         cambiarFase(FasePartida.CUENTA);
     }
 
-    /** Partida nueva: sirve tanto para el comienzo como para la revancha. */
+    /* Partida nueva sirve tanto para el comienzo*/
     private void empezarPartida() {
         reiniciarDatos();
         alIniciarRonda.run();
         cambiarFase(FasePartida.CUENTA);
     }
 
-    /** Se fue un jugador: todo vuelve a empezar y se espera a otro. */
+    /* Se fue un jugador todo vuelve a empezar y se espera a otro */
     private void volverAEsperar() {
         reiniciarDatos();
         alIniciarRonda.run();
@@ -124,7 +116,7 @@ public class PartidaServidor {
         tiempoFase = 0f;
     }
 
-    /** Durante la partida los jugadores solo estan quietos en la espera y en la cuenta regresiva. */
+    /* Durante la partida los jugadores solo estan quietos en la espera y en la cuenta regresiva. */
     public boolean puedenMoverse() {
         return fase == FasePartida.EN_CURSO
             || fase == FasePartida.RONDA_TERMINADA
@@ -151,7 +143,7 @@ public class PartidaServidor {
         return rondasGanadas[indice];
     }
 
-    /** Segundos que faltan en la cuenta regresiva (0 si no estamos en ella). */
+    /* Segundos que faltan en la cuenta regresiva */
     public int getSegundosCuenta() {
         if (fase != FasePartida.CUENTA) return 0;
         return Math.max(0, (int) Math.ceil(DURACION_CUENTA - tiempoFase));
@@ -159,6 +151,13 @@ public class PartidaServidor {
 
     /** Bit 0 = jugador 1, bit 1 = jugador 2. */
     public int getMascaraRevanchas() {
-        return (quiereRevancha[0] ? 1 : 0) | (quiereRevancha[1] ? 2 : 0);
+        int resultado = 0;
+        if (quiereRevancha[0]) {
+            resultado += 1;
+        }
+        if (quiereRevancha[1]) {
+            resultado += 2;
+        }
+        return resultado;
     }
 }

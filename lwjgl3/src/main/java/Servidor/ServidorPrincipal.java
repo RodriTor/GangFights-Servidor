@@ -24,18 +24,15 @@ public class ServidorPrincipal {
 
         ServidorUDP servidor;
 
-        // Primero se abre el puerto: si esta ocupado no tiene sentido seguir
         try {
             servidor = new ServidorUDP(Protocolo.PUERTO);
         } catch (BindException e) {
-            System.out.println("ERROR: el puerto UDP " + Protocolo.PUERTO + " ya esta en uso.");
-            System.out.println("Probablemente ya hay otro servidor abierto en esta computadora. Cerralo e intenta de nuevo.");
-            VentanaServidor.mostrarError("El puerto UDP " + Protocolo.PUERTO + " ya esta en uso.\n"
-                + "Probablemente ya hay otro servidor abierto en esta computadora.\nCerralo e intenta de nuevo.");
+            System.out.println("el puerto UDP " + Protocolo.PUERTO + " ya esta en uso.");
+            VentanaServidor.mostrarError("El puerto UDP " + Protocolo.PUERTO + " ya esta en uso.");
             return;
         } catch (SocketException e) {
-            System.out.println("ERROR: no se pudo abrir el puerto " + Protocolo.PUERTO + ": " + e.getMessage());
-            VentanaServidor.mostrarError("No se pudo abrir el puerto " + Protocolo.PUERTO + ":\n" + e.getMessage());
+            System.out.println("no se pudo abrir el puerto " + Protocolo.PUERTO);
+            VentanaServidor.mostrarError("No se pudo abrir el puerto " + Protocolo.PUERTO);
             return;
         }
 
@@ -44,21 +41,19 @@ public class ServidorPrincipal {
             Box2D.init();
             servidor.iniciar();
         } catch (Throwable e) {
-            System.out.println("ERROR al iniciar el mundo fisico: " + e);
+            System.out.println("error al iniciar el mundo fisico: " + e);
             e.printStackTrace();
             servidor.cerrar();
             VentanaServidor.mostrarError("Error al iniciar el mundo fisico:\n" + e);
             return;
         }
 
-        final ServidorUDP servidorFinal = servidor;
+        ServidorUDP servidorFinal = servidor;
         Runtime.getRuntime().addShutdownHook(new Thread(servidorFinal::cerrar, "Cierre-Servidor"));
 
         System.out.println("Servidor listo. Puerto UDP " + Protocolo.PUERTO + ". Direcciones de esta computadora:");
         mostrarDirecciones();
-        System.out.println("Los clientes encuentran el servidor solos (broadcast). Escribi 'salir' para cerrarlo.");
 
-        // Ventana con el logo y el estado. Al cerrarla se apaga el servidor.
         if (!GraphicsEnvironment.isHeadless()) {
             VentanaServidor.abrir(servidor, Protocolo.PUERTO, () -> {
                 servidorFinal.cerrar();
@@ -70,7 +65,6 @@ public class ServidorPrincipal {
         servidor.cerrar();
     }
 
-    /** Lee la consola hasta que se escriba "salir". Si no hay consola, el servidor sigue hasta que se lo cierre. */
     private static void esperarOrdenDeCierre() {
         try {
             BufferedReader consola = new BufferedReader(new InputStreamReader(System.in));
@@ -81,7 +75,6 @@ public class ServidorPrincipal {
                 }
             }
         } catch (IOException e) {
-            // sin consola: se cae al bloque de abajo
         }
 
         // No hay entrada por consola: se queda funcionando hasta que se cierre el proceso

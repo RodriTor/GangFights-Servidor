@@ -14,22 +14,19 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-/**
- * Lee el mapa de Tiled (Aula.tmx) y devuelve los rectangulos de la capa "Colisiones".
- * Es el mismo archivo que usa el cliente para dibujar, asi servidor y cliente ven el mismo mapa.
+/*
+ Lee el mapa de Tiled (Aula.tmx) y devuelve los rectangulos de la capa "Colisiones".
  */
 public class CargadorColisiones {
 
     private static final String NOMBRE_MAPA = "Aula.tmx";
     private static final String CAPA_COLISIONES = "Colisiones";
 
-    /** Dentro del .jar el mapa esta en la raiz; desde el IDE se busca en la carpeta assets. */
     private static final String[] RUTAS_ALTERNATIVAS = {
         "../assets/Mapas/Aula.tmx",
         "assets/Mapas/Aula.tmx"
     };
 
-    /** @return lista de {x, y, ancho, alto} en pixeles, con el origen abajo a la izquierda (como Box2D). */
     public static List<float[]> cargar() {
         try (InputStream entrada = abrirMapa()) {
             return leerColisiones(entrada);

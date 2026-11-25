@@ -54,7 +54,7 @@ Mensajes de texto con campos separados por `;`.
 | `ESTADO;...` | "Foto" completa del juego (30 veces por segundo) |
 | `CERRADO` | El servidor se apaga |
 
-Formato de `ESTADO` (ver `ServidorUDP.construirEstado`):
+Formato de `ESTADO` (ver `HiloJuego.construirEstado`):
 
 ```
 ESTADO;seq;fase;ronda;ganadorRonda;rondas1;rondas2;conectados;revanchas;cuenta;jugador1;jugador2;botiquin;pistola;balas
@@ -74,7 +74,7 @@ jugador = x,y,vida,animacion,mirandoDerecha,pistola,apuntando,anguloMira,rojo
 
 ```
 core/src/main/java          (toda la logica del servidor)
-  Servidor/   ServidorUDP (sockets + 2 hilos), VentanaServidor (ventana), PartidaVista/MapaVista/EstadoVista/Dibujo (dibujo de la partida), Protocolo
+  Servidor/   ServidorUDP (arranca y cierra), HiloServer (hilo de red: socket y recepción), HiloJuego (hilo del juego: 60 pasos/s), Cliente, DireccionRed, VentanaServidor (ventana), PartidaVista/MapaVista/EstadoVista/Dibujo (dibujo de la partida), Protocolo
   Logica/     PartidaServidor (rondas, fases, revancha), ReaccionGolpe (combo), FasePartida, AnimacionJugador
   Mundo/      MundoServidor (Box2D), JugadorServidor, ItemsServidor, BalasServidor, CargadorColisiones
 lwjgl3/src/main/java        (lanzador de escritorio)

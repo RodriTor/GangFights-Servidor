@@ -4,14 +4,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * Las balas en el servidor. Una bala sale de la boca del arma y vuela en linea recta hacia la mira
- * (recta o en diagonal). Desaparece cuando sale del mapa, choca con el piso, una plataforma o un mueble,
- * o toca al rival (que recibe el disparo).
- *
- * Las balas no usan Box2D: son demasiado rapidas y finas, asi que el movimiento se hace en pasos chicos
- * para que no atraviesen paredes. Igual que todo lo demas, solo las mueve el hilo del juego.
- */
 public class BalasServidor {
 
     private static final float ANCHO = 10f;
@@ -58,7 +50,7 @@ public class BalasServidor {
         this.obstaculos = obstaculos;
     }
 
-    /** La bala sale de la boca del arma del tirador y viaja hacia su mira. */
+    /* La bala sale de la boca del arma del tirador y viaja hacia su mira. */
     public void disparar(JugadorServidor tirador) {
         balas.add(new Bala(tirador, tirador.getXBoca(), tirador.getYBoca(),
             tirador.getXMira(), tirador.getYMira()));
@@ -81,7 +73,6 @@ public class BalasServidor {
         }
     }
 
-    /** @return true si la bala termino su recorrido (choco o salio del mapa). */
     private boolean avanzar(Bala bala, float delta, JugadorServidor rival) {
         float restante = VELOCIDAD * delta;
 
@@ -122,7 +113,6 @@ public class BalasServidor {
         return enX && enY;
     }
 
-    /** "x,y,angulo/x,y,angulo" para el mensaje de estado, o "-" si no hay balas. */
     public String comoTexto() {
         if (balas.isEmpty()) return "-";
 
